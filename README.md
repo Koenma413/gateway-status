@@ -13,7 +13,7 @@
  - set the other parameters in the config file as you see fit
  - setup a crontab ('crontab -e') to receive gateway status updates, for example:
  >\*/5 * * * * php /var/www/ttnm/scripts/UpdateGateways.php
-\* * * * * php /var/www/ttnm/scripts/GatewayStatusUpdate.php
+ >\* * * * * php /var/www/ttnm/scripts/GatewayStatusUpdate.php
  
  UpdateGateways.php discovers new gateways and sets their status
  GatewayStatusUpdate.php send status updates to Slack
