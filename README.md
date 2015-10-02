@@ -12,10 +12,13 @@
  - enter the mysql user details in the config file
  - set the other parameters in the config file as you see fit
  - setup a crontab ('crontab -e') to receive gateway status updates, for example:
+ 
  >\*/5 * * * * php /var/www/ttnm/scripts/UpdateGateways.php
+
  >\* * * * * php /var/www/ttnm/scripts/GatewayStatusUpdate.php
  
  UpdateGateways.php discovers new gateways and sets their status
+
  GatewayStatusUpdate.php send status updates to Slack
 
  - setup your webserver (Apache, Nginx, etc) to point to the 'public' directory of this repository, and you should be good to go!
