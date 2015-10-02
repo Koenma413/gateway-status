@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>The Things Network Gateway monitor</title>
+        <style>
+            #gatewayStatusTable {
+                max-width:600px;
+            }
+            #gatewayStatusTable button {
+                min-width: 6em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <div class="page-header">
+                <h1>The Things Network Gateway Status Overview</h1>
+            </div>
+
+            <p>Have a look at <a href="/gateways">/gateways</a> to access the api</p>
+
+            <h4>Last gateway update received on <?php echo $lastUpdate;?></h4>
+            <table class="table table-bordered table-responsive" id="gatewayStatusTable">
+                <tr><th>Gateway ID</th><th>Status</th><th>Remarks</th></tr>
+                <?php foreach ($gateways as $gateway) {
+                    if ($gateway->status == 'up') {
+                        $gatewayStatusButton = '<button type="button" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span> Up</button>';
+                    } elseif ($gateway->status == 'down') {
+                        $gatewayStatusButton = '<button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true"></span> Down</button>';
+                    } else {
+                        $gatewayStatusButton = '<button type="button" class="btn btn-warning"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> ?</button>';
+                    }
+                    echo "<tr><td>" . $gateway->eui . "</td><td><a href='/gateways/" .$gateway->eui . "'>" . $gatewayStatusButton . "</a></td><td>" . $gateway->remarks . "</td></tr>";
+                } ?>
+            </table>
+
+
+        </div>
+    </body>
+</html>
