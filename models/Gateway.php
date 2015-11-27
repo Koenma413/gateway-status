@@ -89,19 +89,6 @@ class Gateway extends \Phalcon\Mvc\Model
         return $newGateways;
     }
 
-
-    public static function getLastEntry()
-    {
-        $lastEntry = Gateway::findFirst(
-            array(
-                "order" => "last_seen DESC",
-            )
-        );
-
-        return $lastEntry;
-    }
-
-
     public static function updateGatewayStatusFromInflux($since = null, $interval = '1h')
     {
         $config = DI::getDefault()->getConfig();
@@ -180,6 +167,89 @@ class Gateway extends \Phalcon\Mvc\Model
 
     }
 
+    public static function getNewGatewayEuisFromApi()
+    {
+        $config = $config = DI::getDefault()->getConfig();
+        $apiEndpoint = $config->monitor->apiEndPoint;
+        $client = new GuzzleHttp\Client();
+
+        $responseText = $client->get($apiEndpoint)->getBody($asString = true);
+        $response = json_decode($responseText);
+
+        $existingGateways = Gateway::find();
+        $existingEuis = array();
+        foreach ($existingGateways as $existingGateway) {
+            $existingEuis[$existingGateway->eui] = $existingGateway;
+        }
+
+        $now = self::getCurrentLocalDateTime();
+        $newGateways = array();
+
+        foreach ($response as $gatewayApi) {
+            if (!(isset($existingEuis[$gatewayApi->eui]))) {
+                echo 'New eui found: ' . $gatewayApi->eui;
+                $newGateway = new Gateway();
+                $newGateway->eui = $gatewayApi->eui;
+                $newGateway->created_at = self::prepareForDb($now);
+                $newGateway->updated_at = self::prepareForDb($now);
+                $newGateways[] = $newGateway;
+            }
+        }
+
+        return $newGateways;
+    }
+
+
+    public static function updateGatewayStatusFromApi()
+    {
+        $config = $config = DI::getDefault()->getConfig();
+        $apiEndpoint = $config->monitor->apiEndPoint;
+        $client = new GuzzleHttp\Client();
+
+        $responseText = $client->get($apiEndpoint)->getBody($asString = true);
+        $response = json_decode($responseText);
+
+        $now = self::getCurrentLocalDateTime();
+        $gatewaysProcessed = array();
+
+        foreach ($response as $gatewayApi) {
+            $gateway = Gateway::findFirstByEui($gatewayApi->eui);
+            $gateway->last_seen = self::prepareForDb(self::convertToLocalTimezone($gatewayApi->last_seen));
+            $gateway->location = $gatewayApi->latitude . ',' . $gatewayApi->longitude;
+            $gateway->updated_at = self::prepareForDb($now);
+            if (!$gateway->save()) {
+                foreach ($gateway->getMessages() as $message) {
+                    echo $message;
+                }
+            } else {
+                $gatewaysProcessed[] = $gatewayApi->eui;
+            }
+        }
+
+        // make sure that gateways that did not send a recent message to influx get updated
+        $allGateways = Gateway::find();
+
+        foreach ($allGateways as $gateway) {
+            if (!in_array($gateway->eui, $gatewaysProcessed)) {
+                $gateway->updated_at = self::prepareForDb($now);
+                $gateway->save();
+            }
+        }
+
+    }
+
+
+    public static function getLastEntry()
+    {
+        $lastEntry = Gateway::findFirst(
+            array(
+                "order" => "last_seen DESC",
+            )
+        );
+
+        return $lastEntry;
+    }
+
     /**
      * Allows to query a set of records that match the specified conditions
      *
@@ -207,13 +277,17 @@ class Gateway extends \Phalcon\Mvc\Model
         $config = DI::getDefault()->getConfig();
         $downThresholdDateTime = self::getCurrentLocalDateTime();
         $downThresholdDateTime->modify($config->monitor->downStatusOffset);
+        $deadThresholdDateTime = self::getCurrentLocalDateTime();
+        $deadThresholdDateTime->modify($config->monitor->deadStatusOffset);
 
         // determine if gateway is up or down, by comparing last seen entry to user defined offset from current time
         $lastSeenDateTime = self::getDateTimeObject($this->last_seen, new DateTimeZone($config->monitor->localTimezone));
         if ($lastSeenDateTime > $downThresholdDateTime) {
             $newStatus = 'up';
-        } else {
+        } elseif ($lastSeenDateTime > $deadThresholdDateTime) {
             $newStatus = 'down';
+        } else {
+            $newStatus = 'dead';
         }
 
         if ($newStatus != $this->status) {

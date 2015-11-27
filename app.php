@@ -8,12 +8,21 @@
  * Add your routes here
  */
 $app->get('/', function () use ($app) {
-    $gateways = Gateway::find();
+    $gateways = Gateway::find('status != "dead"');
     $lastEntry = Gateway::getLastEntry();
 
     // this isn't 100% correct: if all gateways are down, the last update datetime won't be the same as the actual update time. Otherwise the update datetime could be up to gateway-update-interval off
     echo $app['view']->render('index', array('gateways' => $gateways, 'lastUpdate' => $lastEntry->last_seen));
 });
+
+$app->get('/dead', function () use ($app) {
+    $gateways = Gateway::find('status = "dead"');
+    $lastEntry = Gateway::getLastEntry();
+
+    // this isn't 100% correct: if all gateways are down, the last update datetime won't be the same as the actual update time. Otherwise the update datetime could be up to gateway-update-interval off
+    echo $app['view']->render('index', array('gateways' => $gateways, 'lastUpdate' => $lastEntry->last_seen));
+});
+
 
 $app->get('/gateways', function () use ($app) {
     $response = new Phalcon\Http\Response();

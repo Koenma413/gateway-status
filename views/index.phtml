@@ -20,7 +20,8 @@
                 <h1>The Things Network Gateway Status Overview</h1>
             </div>
 
-            <p>Have a look at <a href="/gateways">/gateways</a> to access the api</p>
+            <p>Have a look at <a href="/gateways">/gateways</a> to access the api<br/>
+            Have a look at <a href="/dead">/dead</a> to list archived gateways</p>
 
             <h4>Last gateway update received on <?php echo $lastUpdate;?></h4>
             <table class="table table-bordered table-responsive" id="gatewayStatusTable">
@@ -30,6 +31,8 @@
                         $gatewayStatusButton = '<button type="button" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span> Up</button>';
                     } elseif ($gateway->status == 'down') {
                         $gatewayStatusButton = '<button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true"></span> Down</button>';
+                    } elseif ($gateway->status == 'dead') {
+                        $gatewayStatusButton = '<button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true"></span> Dead</button>';
                     } else {
                         $gatewayStatusButton = '<button type="button" class="btn btn-warning"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> ?</button>';
                     }

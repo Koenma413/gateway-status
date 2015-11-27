@@ -7,13 +7,13 @@ class UpdateGateways extends Injectable
 {
     public function run()
     {
-        $newGateways = Gateway::getNewGatewayEuisFromInflux();
+        $newGateways = Gateway::getNewGatewayEuisFromApi();
 	    foreach ($newGateways as $newGateway) {
 	        $newGateway->save();
 	    }
 
 	    $lastEntry = Gateway::getLastEntry();
-	    Gateway::updateGatewayStatusFromInflux($lastEntry->last_seen);
+	    Gateway::updateGatewayStatusFromApi($lastEntry->last_seen);
 	}
 }
 try {
